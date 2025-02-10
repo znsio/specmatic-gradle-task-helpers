@@ -84,7 +84,7 @@ project.afterEvaluate {
 // }
 private File defaultAllowedLicensesFile() {
     def allowedLicensesFile = new File(project.layout.buildDirectory.get().asFile, 'allowed-licenses.json')
-    def allowedLicensesDocument = allowedLicenses: allowedLicenses().collect({ eachLicense ->
+    def allowedLicensesDocument = allowedLicenses().collect({ eachLicense ->
         [moduleLicense: eachLicense,
          moduleName   : '.*']
     })
