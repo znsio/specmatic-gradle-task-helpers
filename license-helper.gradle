@@ -1,0 +1,94 @@
+import com.github.jk1.license.LicenseReportExtension
+import com.github.jk1.license.filter.*
+import com.github.jk1.license.render.*
+import groovy.json.JsonSlurper
+
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.github.jk1:gradle-license-report:2.9'
+    }
+}
+
+apply plugin: com.github.jk1.license.LicenseReportPlugin
+
+private List<String> allowedLicenses() {
+    return [
+            '0BSD',
+            'Apache-2.0',
+            'BSD-2-Clause',
+            'CC0-1.0',
+            'EDL-1.0',
+            'EPL-1.0',
+            'EPL-2.0',
+            'MIT',
+            'MPL-2.0',
+            'Public-Domain',
+    ]
+}
+
+tasks.register('prettyPrintLicenseCheckFailures') {
+    doFirst {
+        file("${project.layout.buildDirectory.get().asFile}/reports/dependency-license/dependencies-without-allowed-license.json").withInputStream { inputStream ->
+            def json = new JsonSlurper().parse(inputStream)
+
+            def unsupportedLicenses = json['dependenciesWithoutAllowedLicenses']
+
+            if (unsupportedLicenses.size() > 0) {
+                def unsupportedLicensesGroupedByLicense = json.dependenciesWithoutAllowedLicenses.groupBy { it.moduleLicense }
+
+                unsupportedLicensesGroupedByLicense.each { license, modules ->
+                    println "License: ${license}"
+                    modules.each { module -> println "   - ${module.moduleName} (${module.moduleVersion})"
+                    }
+                    println ""
+                }
+            }
+        }
+    }
+}
+
+checkLicense {
+    finalizedBy tasks.named('prettyPrintLicenseCheckFailures')
+}
+
+
+project.afterEvaluate {
+    def buildDir = project.layout.buildDirectory.get().asFile
+    if (!buildDir.exists()) {
+        buildDir.mkdirs()
+    }
+    LicenseReportExtension extension = project.extensions.findByType(LicenseReportExtension)
+    extension.filters = [new LicenseBundleNormalizer(), new SpdxLicenseBundleNormalizer()]
+    extension.renderers = [new InventoryHtmlReportRenderer()]
+    extension.allowedLicensesFile = defaultAllowedLicensesFile()
+}
+
+// Returns a file with the default allowed licenses. Structure is as follows:
+// {
+//     "allowedLicenses": [
+//         {
+//             "moduleLicense": "MIT",
+//             "moduleName": ".*"
+//         },
+//         {
+//             "moduleLicense": "Apache-2.0",
+//             "moduleName": ".*"
+//         },
+//         ...
+//     ]
+// }
+private File defaultAllowedLicensesFile() {
+    def allowedLicensesFile = new File(project.layout.buildDirectory.get().asFile, 'allowed-licenses.json')
+    def allowedLicensesDocument = allowedLicenses: allowedLicenses().collect({ eachLicense ->
+        [moduleLicense: eachLicense,
+         moduleName   : '.*']
+    })
+
+    allowedLicensesFile.text = new groovy.json.JsonBuilder(allowedLicensesDocument).toPrettyString()
+    return allowedLicensesFile
+}
