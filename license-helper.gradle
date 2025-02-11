@@ -69,7 +69,8 @@ class SpecmaticLicenseCheckPlugin implements Plugin<Project> {
             }
             extension.filters = [new LicenseBundleNormalizer(), new SpdxLicenseBundleNormalizer()]
             extension.renderers = [new SimpleHtmlReportRenderer("index.html"), new InventoryHtmlReportRenderer("inventory.html")]
-            extension.allowedLicensesFile = defaultAllowedLicensesFile(project)
+
+            extension.allowedLicensesFile = createDefaultAllowedLicensesFile(project)
 
             project.tasks.named('jar') {
                 finalizedBy project.tasks.named('checkLicense')
@@ -79,8 +80,15 @@ class SpecmaticLicenseCheckPlugin implements Plugin<Project> {
                 outputs.upToDateWhen { false }
             }
 
+            project.tasks.register('createAllowedLicensesFile') {
+                doLast {
+                    createDefaultAllowedLicensesFile(project)
+                }
+            }
+
             project.tasks.named('checkLicense') {
                 outputs.upToDateWhen { false }
+                it.dependsOn('createAllowedLicensesFile')
                 finalizedBy project.tasks.named('prettyPrintLicenseCheckFailures')
             }
         }
@@ -101,7 +109,7 @@ class SpecmaticLicenseCheckPlugin implements Plugin<Project> {
     //         ...
     //     ]
     // }
-    private static File defaultAllowedLicensesFile(Project project) {
+    private static File createDefaultAllowedLicensesFile(Project project) {
         def allowedLicensesFile = new File(project.layout.buildDirectory.get().asFile, 'allowed-licenses.json')
         def allowedLicensesDocument = allowedLicenses.collect({ eachLicense ->
             [moduleLicense: eachLicense,
