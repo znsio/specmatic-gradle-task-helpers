@@ -1,0 +1,14 @@
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.adarshr:gradle-test-logger-plugin:4.0.0' // gradle license plugin
+    }
+}
+
+if (!System.properties['idea.active']) {
+    project.plugins.apply(com.adarshr.gradle.testlogger.TestLoggerPlugin)
+}
