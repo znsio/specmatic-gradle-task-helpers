@@ -8,9 +8,9 @@ In the `build.gradle` file of your root project, add the following:
 
 ```groovy
 // use the main branch (with a query param to bust cache every 600 seconds)
-apply from: "https://raw.githubusercontent.com/znsio/specmatic-gradle-task-helpers/refs/heads/main/helper.gradle?_=${(int) (new Date().toInstant().epochSecond / 600)}"
+apply from: "https://raw.githubusercontent.com/znsio/specmatic-gradle-task-helpers/refs/heads/main/build.gradle?_=${(int) (new Date().toInstant().epochSecond / 600)}"
 // OR use a specific SHA
-apply from: "https://raw.githubusercontent.com/znsio/specmatic-gradle-task-helpers/<GIT_COMMITISH>/helper.gradle"
+apply from: "https://raw.githubusercontent.com/znsio/specmatic-gradle-task-helpers/<GIT_COMMITISH>/build.gradle"
 ```
 
 This plugin will apply a few policies to the gradle project:

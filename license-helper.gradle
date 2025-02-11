@@ -1,7 +1,11 @@
 import com.github.jk1.license.LicenseReportExtension
-import com.github.jk1.license.filter.*
-import com.github.jk1.license.render.*
+import com.github.jk1.license.LicenseReportPlugin
+import com.github.jk1.license.filter.LicenseBundleNormalizer
+import com.github.jk1.license.filter.SpdxLicenseBundleNormalizer
+import com.github.jk1.license.render.InventoryHtmlReportRenderer
+import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+
 
 buildscript {
     repositories {
@@ -10,85 +14,104 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.github.jk1:gradle-license-report:2.9'
+        classpath 'com.github.jk1:gradle-license-report:2.9' // gradle license plugin
     }
-}
-
-apply plugin: com.github.jk1.license.LicenseReportPlugin
-
-private List<String> allowedLicenses() {
-    return [
-            '0BSD',
-            'Apache-2.0',
-            'BSD-2-Clause',
-            'CC0-1.0',
-            'EDL-1.0',
-            'EPL-1.0',
-            'EPL-2.0',
-            'MIT',
-            'MPL-2.0',
-            'Public-Domain',
-    ]
 }
 
 tasks.register('prettyPrintLicenseCheckFailures') {
     doFirst {
-        file("${project.layout.buildDirectory.get().asFile}/reports/dependency-license/dependencies-without-allowed-license.json").withInputStream { inputStream ->
-            def json = new JsonSlurper().parse(inputStream)
+        def depsWithoutAllowedLicensesReportFile = file("${project.layout.buildDirectory.get().asFile}/reports/dependency-license/dependencies-without-allowed-license.json")
+        if (depsWithoutAllowedLicensesReportFile.exists()) {
+            depsWithoutAllowedLicensesReportFile.withInputStream { inputStream ->
+                def json = new JsonSlurper().parse(inputStream)
 
-            def unsupportedLicenses = json['dependenciesWithoutAllowedLicenses']
+                def unsupportedLicenses = json['dependenciesWithoutAllowedLicenses']
 
-            if (unsupportedLicenses.size() > 0) {
-                def unsupportedLicensesGroupedByLicense = json.dependenciesWithoutAllowedLicenses.groupBy { it.moduleLicense }
+                if (unsupportedLicenses.size() > 0) {
+                    def unsupportedLicensesGroupedByLicense = json.dependenciesWithoutAllowedLicenses.groupBy { it.moduleLicense }
 
-                unsupportedLicensesGroupedByLicense.each { license, modules ->
-                    println "License: ${license}"
-                    modules.each { module -> println "   - ${module.moduleName} (${module.moduleVersion})"
+                    unsupportedLicensesGroupedByLicense.each { license, modules ->
+                        println "License: ${license}"
+                        modules.each { module -> println "   - ${module.moduleName} (${module.moduleVersion})"
+                        }
+                        println ""
                     }
-                    println ""
                 }
             }
         }
     }
 }
 
-checkLicense {
-    finalizedBy tasks.named('prettyPrintLicenseCheckFailures')
-}
+
+class SpecmaticLicenseCheckPlugin implements Plugin<Project> {
+    static private ArrayList<String> allowedLicenses = ['0BSD',
+                                                        'Apache-2.0',
+                                                        'BSD-2-Clause',
+                                                        'CC0-1.0',
+                                                        'EDL-1.0',
+                                                        'EPL-1.0',
+                                                        'EPL-2.0',
+                                                        'MIT',
+                                                        'MPL-2.0',
+                                                        'Public-Domain',]
 
 
-project.afterEvaluate {
-    def buildDir = project.layout.buildDirectory.get().asFile
-    if (!buildDir.exists()) {
-        buildDir.mkdirs()
+    void apply(Project project) {
+        project.plugins.apply("java")
+        project.plugins.apply(LicenseReportPlugin)
+
+        project.afterEvaluate {
+
+            LicenseReportExtension extension = project.extensions.findByType(LicenseReportExtension)
+            def buildDir = project.layout.buildDirectory.get().asFile
+            if (!buildDir.exists()) {
+                buildDir.mkdirs()
+            }
+            extension.filters = [new LicenseBundleNormalizer(), new SpdxLicenseBundleNormalizer()]
+            extension.renderers = [new InventoryHtmlReportRenderer()]
+            extension.allowedLicensesFile = defaultAllowedLicensesFile(project)
+
+            project.tasks.named('jar') {
+                finalizedBy project.tasks.named('checkLicense')
+            }
+
+            project.tasks.named('generateLicenseReport') {
+                outputs.upToDateWhen { false }
+            }
+
+            project.tasks.named('checkLicense') {
+                outputs.upToDateWhen { false }
+                finalizedBy project.tasks.named('prettyPrintLicenseCheckFailures')
+            }
+        }
     }
-    LicenseReportExtension extension = project.extensions.findByType(LicenseReportExtension)
-    extension.filters = [new LicenseBundleNormalizer(), new SpdxLicenseBundleNormalizer()]
-    extension.renderers = [new InventoryHtmlReportRenderer()]
-    extension.allowedLicensesFile = defaultAllowedLicensesFile()
+
+
+    // Returns a file with the default allowed licenses. Structure is as follows:
+    // {
+    //     "allowedLicenses": [
+    //         {
+    //             "moduleLicense": "MIT",
+    //             "moduleName": ".*"
+    //         },
+    //         {
+    //             "moduleLicense": "Apache-2.0",
+    //             "moduleName": ".*"
+    //         },
+    //         ...
+    //     ]
+    // }
+    private static File defaultAllowedLicensesFile(Project project) {
+        def allowedLicensesFile = new File(project.layout.buildDirectory.get().asFile, 'allowed-licenses.json')
+        def allowedLicensesDocument = allowedLicenses.collect({ eachLicense ->
+            [moduleLicense: eachLicense,
+             moduleName   : '.*']
+        })
+
+        allowedLicensesFile.text = new JsonBuilder([allowedLicenses: allowedLicensesDocument]).toPrettyString()
+        return allowedLicensesFile
+    }
+
 }
 
-// Returns a file with the default allowed licenses. Structure is as follows:
-// {
-//     "allowedLicenses": [
-//         {
-//             "moduleLicense": "MIT",
-//             "moduleName": ".*"
-//         },
-//         {
-//             "moduleLicense": "Apache-2.0",
-//             "moduleName": ".*"
-//         },
-//         ...
-//     ]
-// }
-private File defaultAllowedLicensesFile() {
-    def allowedLicensesFile = new File(project.layout.buildDirectory.get().asFile, 'allowed-licenses.json')
-    def allowedLicensesDocument = allowedLicenses().collect({ eachLicense ->
-        [moduleLicense: eachLicense,
-         moduleName   : '.*']
-    })
-
-    allowedLicensesFile.text = new groovy.json.JsonBuilder(allowedLicensesDocument).toPrettyString()
-    return allowedLicensesFile
-}
+apply plugin: SpecmaticLicenseCheckPlugin.class

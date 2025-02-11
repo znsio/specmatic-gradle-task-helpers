@@ -1,1 +1,0 @@
-apply from: (buildscript.sourceFile ? buildscript.sourceFile.toURI() : buildscript.sourceURI).resolve("./license-helper.gradle")

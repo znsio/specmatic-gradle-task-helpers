@@ -1,0 +1,14 @@
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.github.jk1:gradle-license-report:2.9' // gradle license plugin
+    }
+}
+
+apply from: (buildscript.sourceFile ? buildscript.sourceFile.toURI() : buildscript.sourceURI).resolve("./license-helper.gradle")
+
+
