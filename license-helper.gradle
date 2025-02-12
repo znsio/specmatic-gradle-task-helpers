@@ -70,7 +70,7 @@ class SpecmaticLicenseCheckPlugin implements Plugin<Project> {
             if (!buildDir.exists()) {
                 buildDir.mkdirs()
             }
-            extension.filters = [new LicenseBundleNormalizer(), new SpdxLicenseBundleNormalizer()]
+            extension.filters = [new LicenseBundleNormalizer(createDefaultNormalizedLicensesFile(project).toString(), true), new SpdxLicenseBundleNormalizer()]
             extension.renderers = [new SimpleHtmlReportRenderer("index.html"), new InventoryHtmlReportRenderer("inventory.html")]
 
             extension.allowedLicensesFile = createDefaultAllowedLicensesFile(project)
@@ -86,6 +86,7 @@ class SpecmaticLicenseCheckPlugin implements Plugin<Project> {
             project.tasks.register('createAllowedLicensesFile') {
                 doLast {
                     createDefaultAllowedLicensesFile(project)
+                    createDefaultNormalizedLicensesFile(project)
                 }
             }
 
@@ -120,6 +121,22 @@ class SpecmaticLicenseCheckPlugin implements Plugin<Project> {
         })
 
         allowedLicensesFile.text = new JsonBuilder([allowedLicenses: allowedLicensesDocument]).toPrettyString()
+        return allowedLicensesFile
+    }
+
+
+    private static File createDefaultNormalizedLicensesFile(Project project) {
+        def allowedLicensesFile = new File(project.layout.buildDirectory.get().asFile, 'license-normalization.json')
+
+        allowedLicensesFile.text = new JsonBuilder([
+                transformationRules: [
+                        [
+                                "bundleName"       : "BSD-3-Clause",
+                                // normalize `Go License` with this url, to imply a BSD-3-Clause, becuase that's what the license is at this URL
+                                "licenseUrlPattern": "https://golang.org/LICENSE"
+                        ],
+                ]
+        ]).toPrettyString()
         return allowedLicensesFile
     }
 
