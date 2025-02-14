@@ -10,5 +10,8 @@ buildscript {
 }
 
 if (!System.properties['idea.active']) {
-    project.plugins.apply(com.adarshr.gradle.testlogger.TestLoggerPlugin)
+    allprojects { eachProject->
+        eachProject.plugins.apply(com.adarshr.gradle.testlogger.TestLoggerPlugin)
+    }
+
 }
