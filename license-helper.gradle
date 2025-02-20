@@ -74,6 +74,7 @@ class SpecmaticLicenseCheckPlugin implements Plugin<Project> {
             extension.renderers = [new SimpleHtmlReportRenderer("index.html"), new InventoryHtmlReportRenderer("inventory.html")]
 
             extension.allowedLicensesFile = createDefaultAllowedLicensesFile(project)
+            extension.excludeGroups = ['io.specmatic.*']
 
             project.tasks.named('jar') {
                 finalizedBy project.tasks.named('checkLicense')
