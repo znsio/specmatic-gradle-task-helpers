@@ -1,0 +1,11 @@
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("org.barfuin.gradle.taskinfo:org.barfuin.gradle.taskinfo.gradle.plugin:2.2.0")
+    }
+}
+rootProject.pluginManager.apply(org.barfuin.gradle.taskinfo.GradleTaskInfoPlugin)
