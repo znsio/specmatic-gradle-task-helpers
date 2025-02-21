@@ -2,11 +2,10 @@ import com.github.jk1.license.LicenseReportExtension
 import com.github.jk1.license.LicenseReportPlugin
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import com.github.jk1.license.filter.SpdxLicenseBundleNormalizer
-import com.github.jk1.license.render.SimpleHtmlReportRenderer
 import com.github.jk1.license.render.InventoryHtmlReportRenderer
+import com.github.jk1.license.render.SimpleHtmlReportRenderer
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
-
 
 buildscript {
     repositories {
@@ -30,13 +29,14 @@ tasks.register('prettyPrintLicenseCheckFailures') {
 
                 if (unsupportedLicenses.size() > 0) {
                     def unsupportedLicensesGroupedByLicense = json.dependenciesWithoutAllowedLicenses.groupBy { it.moduleLicense }
+                    def messages = []
 
                     unsupportedLicensesGroupedByLicense.each { license, modules ->
-                        println "License: ${license}"
-                        modules.each { module -> println "   - ${module.moduleName} (${module.moduleVersion})"
-                        }
-                        println ""
+                        messages.add("License: ${license}")
+                        modules.each { module -> messages.add("   - ${module.moduleName} (${module.moduleVersion})") }
+                        messages.add("")
                     }
+                    throw new GradleException("The following dependencies have licenses that are not allowed:\n\n${messages.join('\n')}")
                 }
             }
         }
@@ -61,8 +61,8 @@ class SpecmaticLicenseCheckPlugin implements Plugin<Project> {
 
 
     void apply(Project project) {
-        project.plugins.apply("java")
-        project.plugins.apply(LicenseReportPlugin)
+        project.pluginManager.apply("java")
+        project.pluginManager.apply(LicenseReportPlugin)
 
         project.afterEvaluate {
             LicenseReportExtension extension = project.extensions.findByType(LicenseReportExtension)
@@ -77,7 +77,15 @@ class SpecmaticLicenseCheckPlugin implements Plugin<Project> {
             extension.excludeGroups = ['io.specmatic.*']
 
             project.tasks.named('jar') {
-                finalizedBy project.tasks.named('checkLicense')
+                it.finalizedBy project.tasks.named('checkLicense')
+            }
+
+            project.tasks.named('build') {
+                it.finalizedBy project.tasks.named('checkLicense')
+            }
+
+            project.tasks.named('assemble') {
+                it.finalizedBy project.tasks.named('checkLicense')
             }
 
             project.tasks.named('generateLicenseReport') {
