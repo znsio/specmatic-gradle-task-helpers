@@ -1,0 +1,14 @@
+def javaVersionPrinted = false
+
+allprojects {
+    java {
+        toolchain {
+            def version = JavaLanguageVersion.of(17)
+            languageVersion = version
+            if (!javaVersionPrinted) {
+                println("Forcing java version to ${version}")
+                javaVersionPrinted = true
+            }
+        }
+    }
+}

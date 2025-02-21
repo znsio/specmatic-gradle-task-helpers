@@ -13,3 +13,5 @@ apply from: (buildscript.sourceFile ? buildscript.sourceFile.toURI() : buildscri
 apply from: (buildscript.sourceFile ? buildscript.sourceFile.toURI() : buildscript.sourceURI).resolve("./test-logger-plugin.gradle")
 apply from: (buildscript.sourceFile ? buildscript.sourceFile.toURI() : buildscript.sourceURI).resolve("./release-helper.gradle")
 apply from: (buildscript.sourceFile ? buildscript.sourceFile.toURI() : buildscript.sourceURI).resolve("./task-helper.gradle")
+apply from: (buildscript.sourceFile ? buildscript.sourceFile.toURI() : buildscript.sourceURI).resolve("./java-version-helper.gradle")
+

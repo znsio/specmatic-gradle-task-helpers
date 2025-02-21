@@ -21,6 +21,7 @@ This plugin will apply a few policies to the gradle project:
 
 ## What does this provide/how do I use this?
 
+* Sets JDK version in the build
 * Invoking `jar`/`assemble`/`build` task(s) will cause `licenseCheck` task to be invoked, which will generate a license
   report, along with a violation report.
 * Adds the [test-logger-plugin](https://github.com/radarsh/gradle-test-logger-plugin) which pretty prints tests as they run
