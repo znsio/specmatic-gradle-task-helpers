@@ -36,8 +36,8 @@ This plugin will apply a few policies to the gradle project:
   
   * To release a new version, run the following command:
   ```bash
-      ./gradlew release \
-          -Prelease.useAutomaticVersion=true \
-          -Prelease.releaseVersion=1.0.0 \ # this is optional, if not provided, the plugin will take the version specified in `gradle.properties`
-          -Prelease.newVersion=1.1.0-SNAPSHOT # make sure to add the `-SNAPSHOT` suffix
+  ./gradlew release \
+      -Prelease.useAutomaticVersion=true \
+      -Prelease.releaseVersion=1.0.0 \ # Specifies the version to be released. This is optional. If not provided, the plugin will use the version defined in `gradle.properties` (excluding the `-SNAPSHOT` suffix).
+      -Prelease.newVersion=1.1.0-SNAPSHOT # Specifies the version for the next development cycle. Be sure to include the `-SNAPSHOT` suffix.
   ```
