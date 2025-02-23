@@ -1,0 +1,7 @@
+allprojects {
+  it.afterEvaluate {
+    it.tasks.withType(Test) {
+      useJUnitPlatform()
+    }
+  }
+}
