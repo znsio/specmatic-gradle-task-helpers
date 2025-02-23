@@ -1,43 +1,14 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
-buildscript {
-    repositories {
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath("org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:1.9.24")
-    }
-}
-
-def supportedJavaVersion = 17
-
 def javaVersionPrinted = false
-def kotlinVersionPrinted = false
 
 allprojects {
     java {
         toolchain {
-            def currentJVMVersion = JavaLanguageVersion.current()
-
-            if (currentJVMVersion.asInt() != supportedJavaVersion) {
-                throw new GradleException("Java version must be ${JavaLanguageVersion.of(supportedJavaVersion)}. You are using ${currentJVMVersion}")
-            }
-            languageVersion = JavaLanguageVersion.of(supportedJavaVersion)
+            def version = JavaLanguageVersion.of(17)
+            languageVersion = version
             if (!javaVersionPrinted) {
-                println("Forcing java version to ${supportedJavaVersion}")
+                println("Forcing java version to ${version}")
                 javaVersionPrinted = true
             }
         }
-    }
-
-    it.afterEvaluate {
-        it.tasks.withType(KotlinCompile).configureEach {
-            if (!kotlinVersionPrinted) {
-                println("Forcing kotlin version to 17")
-                kotlinVersionPrinted = true
-            }
-            it.kotlinOptions.jvmTarget = supportedJavaVersion.toString()
-        }
-
     }
 }
